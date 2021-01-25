@@ -1,31 +1,15 @@
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
+import requests as r
 import pandas as pd
 from datetime import datetime
+import json, time
 
 class MeshClient():
     def __init__(self):
+        self.rest_url = "https://api.merfi.xyz/graphql"
         self._transport = RequestsHTTPTransport(url="https://merfi.xyz/graphql",verify=True, retries=3)
         self._gql_client = Client(transport=self._transport, fetch_schema_from_transport=True)
-        self._engine_query = gql('''
-        query getEngineResult ($expr: String!, $tstart: String, $tend: String, $interval_unit: intervalUnit!, $n: Int) {
-          engine(expr: $expr, range: { from: $tstart, to: $tend}, interval: { unit: $interval_unit, n: $n}) {
-            __typename,
-            ...on DSLScalar {
-              value
-            }
-            ...on DSLTimeseries {
-              values {
-                timestamp,
-                value
-              }
-            }
-            ...on DSLError {
-              message
-            }
-          }
-        }
-        ''')
         self._search_query = gql('''
         query search($search_str: String!) {
           search(searchStr: $search_str) {
@@ -59,7 +43,7 @@ class MeshClient():
         }
         ''')
     
-    def engine(self,mesh_string,time_start=None,time_end=None,unit="MINUTE",number=15):
+    def engine(self,mesh_string,time_start=None,time_end=None,unit="MINUTE",number=15,display='raw'):
         if time_start is None:
             time_start = str(int((datetime.now().timestamp() - 3*86400)))
         if time_end is None:
@@ -71,10 +55,28 @@ class MeshClient():
             "interval_unit": unit,
             "n":number
         }
-        result = self._gql_client.execute(self._engine_query,variable_values=params)
-        df = pd.DataFrame.from_records(result["engine"]["values"])
-        df["timestamp"] = pd.to_datetime(df["timestamp"],unit="s")
+        identifier = r.post(self.rest_url,data=params)
+        done = False
+        while not done:
+            result = r.get(self.rest_url,params={"identifier":identifier})
+            if not result:
+                time.sleep(1)
+            else:
+                done = True
+
+        if display == "raw":
+            df = result
+        elif display == "dataframe":
+            if result['engine']['__typename'] == 'DSLScalar':
+                df = result['engine']['value']
+            else:
+                df = pd.DataFrame.from_records(result["engine"]["values"])
+                df["timestamp"] = pd.to_datetime(df["timestamp"],unit="s")
+        else:
+            df = None
         return df
+
+    
     
     def search(self,search_string):
         if search_string == "":
