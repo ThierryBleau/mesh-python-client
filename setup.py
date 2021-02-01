@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mesh-python",
-    version="0.0.1",
+    version="0.1",
     author="Thierry Bleau",
     author_email="thierry@protean.so",
     description="Python client to query the mesh engine.",

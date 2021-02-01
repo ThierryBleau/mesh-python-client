@@ -2,3 +2,6 @@ __pycache__
 *.json
 *.ipynb
 .ipynb_checkpoint
+build
+dist
+mesh_python.egg-info

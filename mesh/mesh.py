@@ -66,12 +66,11 @@ class MeshClient():
         }
 
         identifier = r.post(self.rest_url + "engine",json=params,headers=headers)
-        print(identifier.content.decode())
 
         result = None
         while not result:
             status = r.get(self.rest_url + "status",params={"id":identifier.content.decode()},headers=headers)
-            print(status.content.decode())
+            #print(status.content.decode())
             if status.content.decode() != 'DONE':
                 time.sleep(4)
             else:
