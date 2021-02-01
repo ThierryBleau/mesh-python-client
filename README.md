@@ -8,9 +8,8 @@
 
 ```python
 from mesh import MeshClient
-import pandas as pd
 
-key = "{your api key}"
+key = "{username}:{password}"
 client = MeshClient(key)
 query = "$UNIV2.DPI_WETH.DPI_PRICE"
 
